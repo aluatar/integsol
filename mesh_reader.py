@@ -40,7 +40,7 @@ class Mesh(BaseClass):
     @staticmethod
     def get_mph_mesh_elements(
         file: list[str],
-        elements_dim: int,
+        elements_type: int,
         elements_header: str | None="Elements"
     ) -> array:
         pass
