@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "integsol"
+version = "0.1.0"
+description = "Python library for solving integral equation for classical magnetization precession field"
+authors = ["Fedor Shuklin <fedor.shuklin.95@mail.ru>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+meshio = "^5.3.5"
+numpy = "^2.1.3"
+scipy = "^1.14.1"
+matplotlib = "^3.9.2"
+plotly = "^5.24.1"
+
+[tool.poetry.group.dev.dependencies]
+matplotlib = "^3.9.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
