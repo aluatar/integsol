@@ -1,4 +1,4 @@
-import meshio
+from integsol.mesh.mesh_validators import *
 import numpy as np
 from numpy import (
     array,
@@ -8,19 +8,17 @@ from numpy import (
     dot
 )
 from numpy.linalg import (
-    norm,
-        
+    norm,    
 )
-from typing import Iterable
-from .base import BaseClass
+from typing import (
+    Iterable,
+    Literal,
+)
+from integsol.base import BaseClass
+from dataclasses import dataclass
 import time
 
-def element_dim_validate(dim: int, elements: Iterable):
-    bool_arr = [
-        len(e) == dim + 1 if isinstance(e,Iterable) else False 
-        for e in elements
-        ]
-    return all(bool_arr)
+
 
 def oneD_measure(vectors: Iterable):
     return norm(vectors[0])
@@ -41,7 +39,7 @@ def threeD_measure(vectors: Iterable, type: str):
 
 
 
-
+@dataclass
 class Mesh(BaseClass):
     def __init__(
             self,
@@ -54,6 +52,7 @@ class Mesh(BaseClass):
     ):
         self.coordinates = coordinates if coordinates is None else array(coordinates)
         self.elements = elements
+        self.values_on_mesh = {}
 
         if elements_coordinates is None:
             self.elements_coordinates = self.fill_elements_coordinates(
@@ -168,7 +167,7 @@ class Mesh(BaseClass):
         elements_measures: dict = {} 
         for type in elements_coordinates:
             print(f"Calculate measures for {type} type of elements")
-            if element_dim_validate(dim=0, elements=elements_coordinates[type]):
+            if is_element_dim_valide(dim=0, elements=elements_coordinates[type]):
                 continue
             element_measures = []
             for element in elements_coordinates[type]:
@@ -177,11 +176,11 @@ class Mesh(BaseClass):
                     for i in range(1,len(element))
                 ]
 
-                if element_dim_validate(1,elements=elements_coordinates[type]):
+                if is_element_dim_valide(1,elements=elements_coordinates[type]):
                     measure = oneD_measure(vectors=element_vectors)
-                elif element_dim_validate(2,elements=elements_coordinates[type]):
+                elif is_element_dim_valide(2,elements=elements_coordinates[type]):
                     measure = twoD_measure(vectors=element_vectors)
-                elif element_dim_validate(3,elements=elements_coordinates[type]):
+                elif is_element_dim_valide(3,elements=elements_coordinates[type]):
                     measure = threeD_measure(vectors=element_vectors, type=type)
 
                 element_measures.append(measure)
@@ -197,7 +196,7 @@ class Mesh(BaseClass):
     ) -> dict[str, array]:
         elements_centers = {}
         for type in elements_coordinates:
-            if element_dim_validate(dim=0, elements=elements_coordinates[type]):
+            if is_element_dim_valide(dim=0, elements=elements_coordinates[type]):
                 continue
                 
             centers = []
@@ -212,7 +211,7 @@ class Mesh(BaseClass):
    
    
     @classmethod
-    def read(self, path: str,
+    def read(cls, path: str,
              ################
              #   OPTIONAL   # 
              ################
@@ -231,13 +230,13 @@ class Mesh(BaseClass):
                 mesh_file = _m.read()
             mesh_file = mesh_file.splitlines()
 
-            coordinates = self.get_mph_mesh_coordinates(
+            coordinates = cls.get_mph_mesh_coordinates(
                 file=mesh_file,
                 coordinates_header=coordinates_header,
                 comment_char=comment_char,
             )
 
-            elements = self.get_mph_mesh_elements(
+            elements = cls.get_mph_mesh_elements(
                 file=mesh_file,
                 elements_type_number=elements_type_number,
                 elements_header=elements_header,
@@ -249,6 +248,67 @@ class Mesh(BaseClass):
             return Mesh(
                 coordinates=coordinates,
                 elements=elements)
+        
+
+    def fill_mesh(
+        self,
+        path: str,
+        code: str | None,
+        placement: Literal["centers", "nodes"] | None="centers",
+        fill: Literal["vtx", "edge", "boundary", "domain"] | None="domain",
+        #################
+        #   OPTIONAL    #
+        #################
+        comment_char: str | None="%",
+
+    ):
+        with open(path, 'r') as v:
+            values = v.read()
+        values = values.splitlines()
+
+        line_i = 0
+        while values[line_i][0] == comment_char:
+            line_i += 1 
+        
+        
+        if placement == "centers":
+            points_array = self.elements_centers
+        elif placement == "nodes":
+            points_array = self.coordinates
+        else:
+            raise AttributeError(name="placement type error")
+        
+        value_at_point = []
+        for line_i in range(line_i, len(values)):
+            line = values[line_i].split(" ")
+            point_and_value = [float128(v) for v in line if v != ""]
+            point = point_and_value[:3]
+            value = point_and_value[3:]
+
+            if is_point_in_placement(
+                point=point,
+                array=points_array,
+                placement=placement,
+                fill=fill
+            ):
+                value_at_point.append(value)
+        
+        if not is_mesh_filled(
+            values=value_at_point,
+            array=points_array,
+            placement=placement,
+            fill=fill
+        ):
+            raise Exception
+        
+        code = code if code is not None else len(self.values_on_mesh)
+        self.values_on_mesh[code] = np.array(value_at_point)
+            
+        
+
+                  
+        
+
         
 
 
