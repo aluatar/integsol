@@ -30,6 +30,7 @@ class ConvolutionOperator(BaseClass):
         self.kernel = kernel
 
     def to_mesh_matrix(
+        self,
         mesh: Mesh,
         dim: int | None=3
     ) -> array:

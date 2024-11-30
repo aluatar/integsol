@@ -90,7 +90,7 @@ class Mesh(BaseClass):
         #collect coordinates into numpy array
         line_i = entry_i + 1
         coordinates = []
-        while not (file[line_i] == "" or comment_char in file[line_i]):
+        while file[line_i] != "" and comment_char not in file[line_i]:
             line = file[line_i].split(" ")
             coordinates.append(
                 [float128(v) for v in line if v != ""]
@@ -131,7 +131,7 @@ class Mesh(BaseClass):
             line_i += 1
             # start fill in Elements array
             elements = []
-            while not (file[line_i] == "" or comment_char in file[line_i]):
+            while file[line_i] != "" and comment_char not in file[line_i]:
                 line = file[line_i].split(" ")
                 elements.append(
                     [int32(v) for v in line if v != ""]
