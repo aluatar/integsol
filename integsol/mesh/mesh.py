@@ -248,61 +248,6 @@ class Mesh(BaseClass):
             return Mesh(
                 coordinates=coordinates,
                 elements=elements)
-        
-
-    def fill_mesh(
-        self,
-        path: str,
-        code: str | None,
-        placement: Literal["centers", "nodes"] | None="centers",
-        fill: Literal["vtx", "edge", "boundary", "domain"] | None="domain",
-        #################
-        #   OPTIONAL    #
-        #################
-        comment_char: str | None="%",
-
-    ):
-        with open(path, 'r') as v:
-            values = v.read()
-        values = values.splitlines()
-
-        line_i = 0
-        while values[line_i][0] == comment_char:
-            line_i += 1 
-        
-        
-        if placement == "centers":
-            points_array = self.elements_centers
-        elif placement == "nodes":
-            points_array = self.coordinates
-        else:
-            raise AttributeError(name="placement type error")
-        
-        value_at_point = []
-        for line_i in range(line_i, len(values)):
-            line = values[line_i].split(" ")
-            point_and_value = [float128(v) for v in line if v != ""]
-            point = point_and_value[:3]
-            value = point_and_value[3:]
-
-            if is_point_in_placement(
-                point=point,
-                array=points_array,
-                placement=placement,
-                fill=fill
-            ):
-                value_at_point.append(value)
-        
-        if not is_mesh_filled(
-            values=value_at_point,
-            array=points_array,
-            placement=placement,
-            fill=fill
-        ):
-            raise Exception
-        
-        code = code if code is not None else len(self.values_on_mesh)
-        self.values_on_mesh[code] = np.array(value_at_point)
             
         
 

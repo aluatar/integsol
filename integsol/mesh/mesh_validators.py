@@ -5,7 +5,7 @@ from typing import (
 
 from numpy import (
     array,
-    float128,
+    float32,
 )
 import numpy as np
 
@@ -28,17 +28,17 @@ def is_point_in_placement(
             case "vtx":
                 raise TypeError
             case "edge":
-                if np.round(point, 4) in np.round(array["edg"], 4):
+                if float32(point) in float32(array["edg"]):
                     return True
             case "boundary":
-                if np.round(point, 4) in np.round(array["tri"], 4):
+                if float32(point) in float32(array["tri"]):
                     return True
             case "domain":
-                if np.round(point, 4) in np.round(array["tet"], 4):
+                if float32(point) in float32(array["tet"]):
                     return True
     
     elif placement == "nodes":
-        if np.round(point, 4) in np.round(array, 4):
+        if float32(point) in float32(array):
             return True
                 
     else:
