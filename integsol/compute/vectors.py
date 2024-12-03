@@ -11,26 +11,34 @@ from typing import (
 )
 from numpy import (
     array,
-    float128,
     float64,
 )
 import numpy as np
+from typing import Any
+from torch import Tensor
 
 class VectorField(BaseClass):
 
     def __init__(
         self,
-        coordinates: array,
-        values: array,
-        dim: int | None=3,
         mesh: Mesh | None=None,
+        coordinates: Any | None=None,
+        values: Any | None=None,
+        dim: int | None=3,
         values_on_mesh: Iterable | None=None,
-        vectorized: tuple[Iterable, Iterable] | None=None,
+        vectorized: tuple[Iterable, Tensor] | None=None,
     ):
-        self.coorrdinates = coordinates
-        self.values = values
-        self.dim = dim
         self.mesh = mesh
+        self.dim = dim
+
+        if coordinates is not None:
+            self.coorrdinates = coordinates
+        elif coordinates is None and self.mesh is not None:
+            self.coorrdinates = self.mesh.coordinates
+        else:
+            self.coorrdinates = np.zeros(shape=(1, self.dim))
+
+        self.values = values if values is not None else np.zeros(shape=(len(self.coorrdinates), self.dim))
         self.values_on_mesh = values_on_mesh
         self.vectorized = vectorized
 
@@ -57,7 +65,7 @@ class VectorField(BaseClass):
         values = []
         for line_i in range(line_i, len(field)):
             line = field[line_i].split(" ")
-            point_and_value = [float128(v) for v in line if v != ""]
+            point_and_value = [float64(v) for v in line if v != ""]
             point = point_and_value[:3]
             value = point_and_value[3:]
             
@@ -96,7 +104,7 @@ class VectorField(BaseClass):
         values = []
         for line_i in range(line_i, len(field)):
             line = field[line_i].split(" ")
-            point_and_value = [float128(v) for v in line if v != ""]
+            point_and_value = [float64(v) for v in line if v != ""]
             point = point_and_value[:3]
             value = point_and_value[3:]
             
@@ -163,27 +171,24 @@ class VectorField(BaseClass):
 
     def vectorize(
         self
-    ) -> tuple[array, array]:
+    ) -> tuple[array, Tensor]:
         vectorized_points, vectorized_values = [], []
         for point, value in zip (self.coorrdinates, self.values):
             for component in value:
                 vectorized_points.append(point)
                 vectorized_values.append(component)
         
-        self.vectorized = (array(vectorized_points), array(vectorized_values))
+        self.vectorized = (array(vectorized_points), Tensor(vectorized_values))
 
         return self.vectorized
     
     def devectorize(
         self,
-        vectorized_values: Iterable | None=None,
+        values: Iterable | None=None,
     ) -> None:
-        if vectorized_values is None:
-            vectorized_values = self.vectorized
+        if values is None:
+            values = self.vectorized
         dim = self.dim
-        points = vectorized_values[0]
-        values = vectorized_values[1]
-
         if len(values) % 3 != 0:
             raise Exception
         

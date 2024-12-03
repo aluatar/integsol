@@ -3,7 +3,7 @@ import numpy as np
 from numpy import (
     array,
     int32,
-    float128,
+    float64,
     cross,
     dot
 )
@@ -17,6 +17,7 @@ from typing import (
 from integsol.base import BaseClass
 from dataclasses import dataclass
 import time
+import sys
 
 
 
@@ -43,8 +44,8 @@ def threeD_measure(vectors: Iterable, type: str):
 class Mesh(BaseClass):
     def __init__(
             self,
+            coordinates: Iterable,
             pref: str | None='nm',
-            coordinates: Iterable | None=None,
             elements: dict[str, array] | None=None,
             elements_coordinates: dict[str, array] | None=None,
             elements_measures: dict[str, array] | None=None,
@@ -93,7 +94,7 @@ class Mesh(BaseClass):
         while file[line_i] != "" and comment_char not in file[line_i]:
             line = file[line_i].split(" ")
             coordinates.append(
-                [float128(v) for v in line if v != ""]
+                [float64(v) for v in line if v != ""]
             )
             line_i += 1
 
@@ -165,12 +166,14 @@ class Mesh(BaseClass):
     ) -> dict[str, array]:
         start = time.time()
         elements_measures: dict = {} 
+        print("Begin calculation of elements measures.")
         for type in elements_coordinates:
             print(f"Calculate measures for {type} type of elements")
             if is_element_dim_valide(dim=0, elements=elements_coordinates[type]):
                 continue
             element_measures = []
-            for element in elements_coordinates[type]:
+            _len = len(elements_coordinates[type])
+            for step, element in enumerate(elements_coordinates[type]):
                 element_vectors = [
                     np.array(element[0]) - np.array(element[i])
                     for i in range(1,len(element))
@@ -184,6 +187,9 @@ class Mesh(BaseClass):
                     measure = threeD_measure(vectors=element_vectors, type=type)
 
                 element_measures.append(measure)
+                sys.stdout.write(f"\rProgress: {round(100 * step / _len, 2)}%")
+                sys.stdout.flush()
+            print('\n')
             
             elements_measures[type] = np.array(element_measures)
         finish = time.time()
