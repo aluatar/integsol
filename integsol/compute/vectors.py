@@ -15,7 +15,13 @@ from numpy import (
 )
 import numpy as np
 from typing import Any
-from torch import Tensor
+from torch import (
+    Tensor,
+    double,
+)
+import torch
+
+torch.set_default_dtype(double)
 
 class VectorField(BaseClass):
 
@@ -196,7 +202,7 @@ class VectorField(BaseClass):
                 [values[dim*i], values[dim*i + 1], values[dim*i + 2]]
             )
 
-        self.values = np.array(devectorized_values)
+        self.values = np.array(float64(devectorized_values))
 
 
 

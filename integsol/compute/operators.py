@@ -1,5 +1,6 @@
 from integsol.base import BaseClass
 from integsol.mesh.mesh import Mesh
+from copy import deepcopy
 from typing import (
     Any, 
     Literal,
@@ -13,7 +14,13 @@ from numpy import (
 )
 import sys
 from time import time
-from torch import Tensor
+from torch import (
+    Tensor,
+    double,
+)
+import torch
+
+torch.set_default_dtype(double)
 
 FillElementTypesMap = {
     "vtx": "vtx",
@@ -63,13 +70,9 @@ class IntegralConvolutionOperator(BaseClass):
                 if not isinstance(kernel_evaluated, Iterable):
                     raise Exception
                 if any(isnan(concatenate(kernel_evaluated, axis=0))):
-                    point_prime_plus = point_prime + 5e-2 * point_prime
-                    point_prime_minus = point_prime - 5e-2 * point_prime
-                    pv_kernel_evaluated_plus = self.kernel(point, point_prime_plus)
-                    pv_kernel_evaluated_minus = self.kernel(point, point_prime_minus)
-                    pv_kernel_evaluated = (pv_kernel_evaluated_plus + pv_kernel_evaluated_minus) / 2
+                    kernel_evaluated[isnan(kernel_evaluated)] = 1
                     for i in range(self.dim):
-                        row[i].extend(measure * array(pv_kernel_evaluated[i]))
+                        row[i].extend(array(kernel_evaluated[i]))
 
                 else:
                     for i in range(self.dim):
