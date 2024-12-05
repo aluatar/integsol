@@ -7,7 +7,9 @@ from typing import (
 )
 from numpy import (
     array,
+    concatenate,
     zeros,
+    isnan,
 )
 import sys
 from time import time
@@ -60,9 +62,18 @@ class IntegralConvolutionOperator(BaseClass):
                 kernel_evaluated = self.kernel(point, point_prime)
                 if not isinstance(kernel_evaluated, Iterable):
                     raise Exception
-                
-                for i in range(self.dim):
-                    row[i].extend(measure * array(kernel_evaluated[i]))
+                if any(isnan(concatenate(kernel_evaluated, axis=0))):
+                    point_prime_plus = point_prime + 5e-2 * point_prime
+                    point_prime_minus = point_prime - 5e-2 * point_prime
+                    pv_kernel_evaluated_plus = self.kernel(point, point_prime_plus)
+                    pv_kernel_evaluated_minus = self.kernel(point, point_prime_minus)
+                    pv_kernel_evaluated = (pv_kernel_evaluated_plus + pv_kernel_evaluated_minus) / 2
+                    for i in range(self.dim):
+                        row[i].extend(measure * array(pv_kernel_evaluated[i]))
+
+                else:
+                    for i in range(self.dim):
+                        row[i].extend(measure * array(kernel_evaluated[i]))
             
             matrix.extend(row)
             sys.stdout.write(f"\rProgress: {round(100 * step / _len, 2)}%")
