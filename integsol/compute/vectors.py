@@ -26,7 +26,7 @@ class VectorField(BaseClass):
         values: Any | None=None,
         dim: int | None=3,
         values_on_mesh: Iterable | None=None,
-        vectorized: tuple[Iterable, Tensor] | None=None,
+        vectorized: Tensor | None=None,
     ):
         self.mesh = mesh
         self.dim = dim
@@ -171,15 +171,13 @@ class VectorField(BaseClass):
 
     def vectorize(
         self
-    ) -> tuple[array, Tensor]:
-        vectorized_points, vectorized_values = [], []
-        for point, value in zip (self.coorrdinates, self.values):
+    ) -> Tensor:
+        vectorized_values = []
+        for value in self.values:
             for component in value:
-                vectorized_points.append(point)
                 vectorized_values.append(component)
         
-        self.vectorized = (array(vectorized_points), Tensor(vectorized_values))
-
+        self.vectorized = Tensor(vectorized_values)
         return self.vectorized
     
     def devectorize(
