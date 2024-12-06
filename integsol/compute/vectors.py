@@ -1,6 +1,6 @@
 from integsol.base import BaseClass
 from integsol.mesh.mesh import Mesh
-from integsol.mesh.mesh_validators import (
+from integsol.validators.mesh_validators import (
     is_point_in_placement,
     is_mesh_filled,
 )

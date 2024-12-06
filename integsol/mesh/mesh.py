@@ -1,4 +1,4 @@
-from integsol.mesh.mesh_validators import *
+from integsol.validators.mesh_validators import *
 import numpy as np
 from numpy import (
     array,
@@ -42,10 +42,16 @@ def threeD_measure(vectors: Iterable, type: str):
 
 @dataclass
 class Mesh(BaseClass):
+    FillElementTypesMap = {
+        "vtx": "vtx",
+        "edge": "edg",
+        "boundary": "tri",
+        "domain": "tet",
+    }
     def __init__(
             self,
             coordinates: Iterable,
-            pref: str | None='nm',
+            dim: int | None=3,
             elements: dict[str, array] | None=None,
             elements_coordinates: dict[str, array] | None=None,
             elements_measures: dict[str, array] | None=None,
@@ -54,6 +60,7 @@ class Mesh(BaseClass):
         self.coordinates = coordinates if coordinates is None else array(coordinates)
         self.elements = elements
         self.values_on_mesh = {}
+        self.dim = dim
 
         if elements_coordinates is None:
             self.elements_coordinates = self.fill_elements_coordinates(
