@@ -11,7 +11,7 @@ def demagnetization_tensor_kernel(
 ) -> array:
     position, position_prime = array(position), array(position_prime)
     diff = position - position_prime
-    abs_diff = np.linalg.norm(diff)
+    abs_diff = np.sqrt(diff.dot(diff))
     _element = lambda i, j: (
         -3 * (diff[i] * diff[j]) / abs_diff ** 5 + (1 / abs_diff ** 3 if i == j else 0) if abs_diff != 0 else np.nan
     )

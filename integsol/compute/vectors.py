@@ -12,6 +12,10 @@ from typing import (
 from numpy import (
     array,
     float64,
+    concatenate,
+    unique,
+    isnan,
+    where,
 )
 import numpy as np
 from typing import Any
@@ -20,6 +24,7 @@ from torch import (
     double,
 )
 import torch
+from scipy.interpolate import griddata
 
 torch.set_default_dtype(double)
 
@@ -203,6 +208,73 @@ class VectorField(BaseClass):
             )
 
         self.values = np.array(float64(devectorized_values))
+
+
+    def at(self, points: Iterable, append_values: bool | None=False):
+
+        shape = np.shape(points)
+        if len(shape) == 1:
+            length, dim = 1, shape[0]
+        elif len(shape) == 0:
+            raise Exception
+        else:
+            length, dim = shape[0], shape[1]
+
+        if self.dim != dim:
+            raise Exception
+        
+        if length > 1:
+            points = np.array(points).T
+        _points = tuple([points[ei] for ei in range(dim)])
+        
+        _values = np.array(
+            [
+                griddata(
+                    points=tuple(self.coorrdinates.T),
+                    values=self.values.T[ei],
+                    xi=_points
+                ) 
+                for ei in range(dim)
+            ]
+        )
+
+        if np.any(isnan(_values)):
+            if length > 1:
+                nan_value_idx = unique(where(isnan(_values.T)))
+                nan_points = points.T[nan_value_idx]
+                nan_points = tuple([nan_points.T[ei] for ei in range(dim)])
+            else:
+                nan_points = _points
+
+            nan_values = np.array(
+                [
+                    griddata(
+                        points=tuple(self.coorrdinates.T),
+                        values=self.values.T[ei],
+                        xi=nan_points,
+                        method="nearest",
+                    ) 
+                    for ei in range(dim)
+                ]
+            )
+
+            if length > 1:
+                _values.T[nan_value_idx] = nan_values.T
+            else:
+                _values = nan_values
+
+        if append_values:
+            if length > 1:
+                self.values = concatenate([self.values, np.array(_values).T])
+                self.coorrdinates = concatenate([self.coorrdinates, points.T])
+            else:
+                self.values = concatenate([self.values, [_values]])
+                self.coorrdinates = concatenate([self.coorrdinates, [points]])
+
+        return np.array(_values).T
+    __call__ = at
+
+        
 
 
 
