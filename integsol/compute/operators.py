@@ -12,7 +12,10 @@ from numpy import (
     zeros,
     isnan,
     nan,
-    sign,
+    ones,
+    sum,
+    float64,
+    float128,
 )
 from integsol.compute.vectors import VectorField
 from abc import abstractmethod
@@ -68,31 +71,27 @@ class IntegralConvolutionOperator(BaseLinearOperator):
         )
     
     @staticmethod
-    def get_principle_value(
-        _kernel: Iterable,
-        diff_prev: Iterable | None,
-        diff_next: Iterable | None,
+    def get_dipole_superposition(
+        kernel: Any,
+        measure: float64 | float128,
+        point: Iterable,
+        center: Iterable,
+        element: Iterable,
         dim: int,
     ) -> Iterable:
-        result = []
-        for row in _kernel:
-            result_row = []
-            for ei in range(dim):
-                if isnan(row[ei]):
-                    prev_sign = sign(diff_prev[ei]) if diff_prev is not None else 0
-                    next_sign = sign(diff_next[ei]) if diff_next is not None else 0
-                    tot_sign = prev_sign + next_sign
-
-                    if tot_sign > 0:
-                        result_row.append(-2)
-                    elif tot_sign < 0:
-                        result_row.append(4)
-                    else:
-                        result_row.append(1)
-                else:
-                    result_row.append(row[ei])
-            result.append(result_row)
+        center_kernel = kernel(point, center)
+        if not isinstance(center_kernel, Iterable):
+            raise Exception
         
+        if any(isnan(concatenate(center_kernel, axis=0))):
+            center_kernel = ones(shape=(dim,dim)) 
+        else:
+            center_kernel = center_kernel * measure
+        
+        nodes_kernel = sum([kernel(point, en) for en in element], axis=0) * measure
+
+        result = center_kernel + nodes_kernel
+
         return array(result)
         
     
@@ -108,6 +107,7 @@ class IntegralConvolutionOperator(BaseLinearOperator):
 
         if placement == "centers":
             points_array = self.mesh.elements_centers.get(mesh.FillElementTypesMap[fill])
+            nodes_array = self.mesh.elements_coordinates.get(mesh.FillElementTypesMap[fill])
             measures_array = self.mesh.elements_measures.get(mesh.FillElementTypesMap[fill])
         elif placement == "nodes":
             points_array = self.mesh.coordinates.get(mesh.FillElementTypesMap[fill])
@@ -119,31 +119,24 @@ class IntegralConvolutionOperator(BaseLinearOperator):
         print(f"Begin placement of operator on mesh elements' {placement}.")
         for step, point in enumerate(points_array):
             row = [[] for _ in range(self.dim)]
-            for point_prime, measure in zip(points_array, measures_array):
-                kernel_evaluated = self.kernel(point, point_prime)
-                if not isinstance(kernel_evaluated, Iterable):
-                    raise Exception
-                if any(isnan(concatenate(kernel_evaluated, axis=0))):
-                    diff_prev = point - points_array[step - 1] if step != 0 else None
-                    diff_next = point - points_array[step + 1] if step != len(points_array) - 1 else None
-                    kernel_evaluated = self.get_principle_value(
-                        _kernel=kernel_evaluated,
-                        diff_prev=diff_prev,
-                        diff_next=diff_next,
-                        dim=self.dim
-                    )
-                    for i in range(self.dim):
-                        row[i].extend(array(kernel_evaluated[i]))
+            for element , point_prime, measure in zip(nodes_array, points_array, measures_array):
+                element_dipol_superposition = self.get_dipole_superposition(
+                    kernel=self.kernel,
+                    measure=measure,
+                    point=point,
+                    center=point_prime,
+                    element=element,
+                    dim=self.dim
+                ) 
 
-                else:
-                    for i in range(self.dim):
-                        row[i].extend(measure * array(kernel_evaluated[i]))
+                for i in range(self.dim):
+                    row[i].extend(element_dipol_superposition[i])
             
             matrix.extend(row)
             sys.stdout.write(f"\rProgress: {round(100 * step / _len, 2)}%")
             sys.stdout.flush()
         print('\n')
-        self.mesh_matrix = Tensor(matrix)
+        self.mesh_matrix = Tensor(matrix).T
         finish = time()
         print(f"Mesh matric of the operator generated in {finish - start} seconds.")
         return self.mesh_matrix
