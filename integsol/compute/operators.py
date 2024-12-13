@@ -26,7 +26,6 @@ from torch import (
     double,
 )
 import torch
-from integsol.compute.algebra import levi_chitiva_3
 
 torch.set_default_dtype(double)
 
