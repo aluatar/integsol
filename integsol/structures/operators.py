@@ -17,7 +17,7 @@ from numpy import (
     float64,
     float128,
 )
-from integsol.compute.vectors import VectorField
+from integsol.structures.vectors import VectorField
 from abc import abstractmethod
 import sys
 from time import time
