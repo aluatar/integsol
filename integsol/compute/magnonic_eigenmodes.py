@@ -13,3 +13,12 @@ from torch import (
     matmul,
     mv,
 )
+
+def get_comsol_mesh(path: str) -> Mesh:
+    mesh = Mesh.read(path=path)
+    return mesh
+
+
+def get_precalculated_magnetization(path: str, mesh: Mesh) -> VectorField:
+    magnetization = VectorField.read_to_mesh(path=path, mesh=mesh)
+    return magnetization
