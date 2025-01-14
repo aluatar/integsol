@@ -272,6 +272,25 @@ class VectorField(BaseClass):
                 self.coorrdinates = concatenate([self.coorrdinates, [points]])
 
         return np.array(_values).T
+    
+    def write(
+        self,
+        path: str,
+        name: str | None="v",
+        delimiter: Literal['',',',';'] | None=' '
+    ) -> None:
+        with open(path, 'w') as f:
+            header = f"%x'\t'y'\t'z'\t'{name}x\t{name}y\t{name}z\n"
+            f.write(header)
+            for coorrdinates, values in zip(self.coorrdinates, self.values):
+                line = (
+                    "".join(str(c) + delimiter for c in coorrdinates)
+                    + "".join(str(v) + delimiter for v in values) + '\n'
+                )
+                f.write(line)
+        
+        f.close()
+
     __call__ = at
 
         
