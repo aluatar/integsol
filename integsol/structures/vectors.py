@@ -12,6 +12,7 @@ from typing import (
 from numpy import (
     array,
     float64,
+    complex128,
     concatenate,
     unique,
     isnan,
@@ -27,6 +28,23 @@ import torch
 from scipy.interpolate import griddata
 
 torch.set_default_dtype(double)
+
+def to_number(v: str) -> float64 | complex128:
+    try:
+        return float64(v)
+
+    except ValueError:
+        if '+' in v:
+            v = v.split('+')
+            v[1] = v[1].replace('i', '')
+            v[1] = v[1].replace('j', '')
+            return complex128(float64(v[0]), float64(v[1]))
+        elif '-' in v:
+            v = v.split('-')
+            v[1] = v[1].replace('i', '')
+            v[1] = v[1].replace('j', '')
+            return complex128(float64(v[0]), -float64(v[1]))
+
 
 class VectorField(BaseClass):
 
@@ -115,7 +133,7 @@ class VectorField(BaseClass):
         values = []
         for line_i in range(line_i, len(field)):
             line = field[line_i].split(" ")
-            point_and_value = [float64(v) for v in line if v != ""]
+            point_and_value = [to_number(v)  for v in line if v != ""]
             point = point_and_value[:3]
             value = point_and_value[3:]
             

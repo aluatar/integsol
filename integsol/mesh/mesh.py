@@ -18,7 +18,7 @@ from integsol.base import BaseClass
 from dataclasses import dataclass
 import time
 import sys
-
+from datetime import datetime
 
 
 def oneD_measure(vectors: Iterable):
@@ -262,6 +262,48 @@ class Mesh(BaseClass):
                 coordinates=coordinates,
                 elements=elements)
             
+
+    def write(self, path: str):
+        with open(path, 'w') as mf:
+            mf.write(f"# INTEGSOL MESH; CREATED {datetime.now()} ", '\n')
+
+            mf.write("COORDINATES")
+            for position in self.coordinates:
+                mf.write(" ".join(map(str, position)))
+            
+            mf.write("ELEMENTS")
+            for element_type in self.elements:
+                mf.write(f"TYPE {element_type}")
+                for element in self.elements.get(element_type):
+                    mf.write(" ".join(map(str, element)))
+
+            mf.write("ELEMENT COORDINATES")
+            for element_type in self.elements_coordinates:
+                mf.write(f"TYPE {element_type}")
+                for element_nodes in self.elements_coordinates.get(element_type):
+                    for node_position in element_nodes:
+                        mf.write(" ".join(map(str, node_position)))
+
+            mf.write("ELEMENT CENTERS")
+            for element_type in self.elements_centers:
+                mf.write(f"TYPE {element_type}")
+                for element_center in self.elements.get(element_type):
+                    mf.write(" ".join(map(str, element_center)))
+
+            mf.write("MEASURES")
+            for element_type in self.elements_measures:
+                mf.write(f"TYPE {element_type}")
+                for measure in self.elements_measures.get(element_type):
+                    mf.write(str(measure))
+
+        mf.close()
+
+
+    def load(path: str):
+        pass
+
+
+
         
 
                   
