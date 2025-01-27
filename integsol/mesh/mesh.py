@@ -263,44 +263,60 @@ class Mesh(BaseClass):
                 elements=elements)
             
 
-    def write(self, path: str):
-        with open(path, 'w') as mf:
-            mf.write(f"# INTEGSOL MESH; CREATED {datetime.now()} ", '\n')
+    # ad hoc
 
-            mf.write("COORDINATES")
-            for position in self.coordinates:
-                mf.write(" ".join(map(str, position)))
-            
-            mf.write("ELEMENTS")
-            for element_type in self.elements:
-                mf.write(f"TYPE {element_type}")
-                for element in self.elements.get(element_type):
-                    mf.write(" ".join(map(str, element)))
+    def dump(self, path: str) -> None:
+        import json
 
-            mf.write("ELEMENT COORDINATES")
-            for element_type in self.elements_coordinates:
-                mf.write(f"TYPE {element_type}")
-                for element_nodes in self.elements_coordinates.get(element_type):
-                    for node_position in element_nodes:
-                        mf.write(" ".join(map(str, node_position)))
+        _mesh = {
+            "metainfo": "Mesh file " + path.split("/")[-1].replace(".json", "") + f" created at {datetime.now()}",
+            "coordinates": self.coordinates.tolist(),
+            "elements": {
+                type: arr.tolist() for type, arr in self.elements.items()
+            },
+            "elements_coordinates": {
+                type: arr.tolist() for type, arr in self.elements_coordinates.items()
+            },
+            "elements_centers": {
+                type: arr.tolist() for type, arr in self.elements_centers.items()
+            },
+            "elements_measures": {
+                type: arr.tolist() for type, arr in self.elements_measures.items()
+            }
+        }
 
-            mf.write("ELEMENT CENTERS")
-            for element_type in self.elements_centers:
-                mf.write(f"TYPE {element_type}")
-                for element_center in self.elements.get(element_type):
-                    mf.write(" ".join(map(str, element_center)))
-
-            mf.write("MEASURES")
-            for element_type in self.elements_measures:
-                mf.write(f"TYPE {element_type}")
-                for measure in self.elements_measures.get(element_type):
-                    mf.write(str(measure))
-
-        mf.close()
+        print(json.dumps(_mesh))
+        with open (path, 'w') as mesh_json:
+            mesh_json.write(json.dumps(_mesh))
 
 
     def load(path: str):
-        pass
+        import json
+
+        with open(path, 'r') as mesh_file:
+            _mesh = json.load(mesh_file)
+
+        coordinates = array(_mesh['coordinates'])
+        elements = { type: array(arr) for type, arr in _mesh['elements'].items()}
+        element_coordinates = { type: array(arr) for type, arr in _mesh['elements_coordinates'].items()}
+        element_centers = { type: array(arr) for type, arr in _mesh['elements_centers'].items()}
+        element_measures = { type: array(arr) for type, arr in _mesh['elements_measures'].items()}
+
+        return Mesh(
+            coordinates=coordinates,
+            elements=elements,
+            elements_centers=element_centers,
+            elements_coordinates=element_coordinates,
+            elements_measures=element_measures,
+            dim=3,
+        )
+
+        
+
+
+                 
+            
+
 
 
 
